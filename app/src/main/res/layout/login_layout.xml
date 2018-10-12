@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.qmuiteam.qmui.widget.QMUIWindowInsetLayout
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:tools="http://schemas.android.com/tools"
+        android:layout_height="match_parent"
+        android:layout_width="match_parent" xmlns:app="http://schemas.android.com/apk/res-auto"
+        tools:context="cn.huse.prepare.MainActivity"
+        android:orientation="vertical"
+>
+    <LinearLayout android:layout_width="match_parent" android:layout_height="match_parent"
+                  android:orientation="vertical">
+
+
+        <com.qmuiteam.qmui.widget.QMUITopBar
+                android:id="@+id/topbar"
+                android:layout_width="match_parent"
+                app:qmui_topbar_bg_color="@color/colorPrimary"
+                android:layout_height="?attr/qmui_topbar_height"/>
+        <EditText android:id="@+id/username" android:layout_width="match_parent" android:layout_height="wrap_content"
+                  android:hint="账号" android:text="18593470660"/>
+        <EditText android:id="@+id/passwd" android:inputType="textPassword" android:layout_width="match_parent"
+                  android:layout_height="wrap_content"
+                  android:hint="密码" android:text="j9841520p"/>
+        <Button android:id="@+id/btn_login" android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="提交"/>
+    </LinearLayout>
+
+
+</com.qmuiteam.qmui.widget.QMUIWindowInsetLayout>
