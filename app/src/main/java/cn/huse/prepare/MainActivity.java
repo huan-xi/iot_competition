@@ -5,6 +5,7 @@ import android.graphics.Color;
 import android.os.Handler;
 import android.os.Message;
 import android.service.autofill.Dataset;
+import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -13,6 +14,8 @@ import android.widget.Button;
 import android.widget.CompoundButton;
 import android.widget.SeekBar;
 import android.widget.Toast;
+import cn.com.newland.nle_sdk.responseEntity.ListItemOfDevice;
+import cn.com.newland.nle_sdk.responseEntity.ListItemOfNewestData;
 import cn.com.newland.nle_sdk.responseEntity.ProjectInfo;
 import cn.com.newland.nle_sdk.responseEntity.base.BasePager;
 import cn.com.newland.nle_sdk.responseEntity.base.BaseResponseEntity;
@@ -20,10 +23,7 @@ import cn.com.newland.nle_sdk.util.NetWorkBusiness;
 import cn.com.newland.nle_sdk.util.Tools;
 import cn.huse.myapplication.R;
 import cn.huse.prepare.base.BaseActivity;
-import cn.huse.prepare.util.Constans;
-import cn.huse.prepare.util.DataCache;
-import cn.huse.prepare.util.Device;
-import cn.huse.prepare.util.Utils;
+import cn.huse.prepare.util.*;
 import com.github.mikephil.charting.animation.Easing;
 import com.github.mikephil.charting.charts.LineChart;
 import com.github.mikephil.charting.components.Description;
@@ -39,8 +39,10 @@ import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
+import javax.xml.datatype.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 public class MainActivity extends BaseActivity {
     @ViewInject(R.id.up_down)
@@ -56,7 +58,7 @@ public class MainActivity extends BaseActivity {
     QMUIRoundButton btn_end;
     Context context;
     private boolean isRecode = false;
-
+    DynamicLineChartManager dynamicLineChartManager;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         setContentView(R.layout.activity_main);
@@ -64,7 +66,7 @@ public class MainActivity extends BaseActivity {
         context = this;
         initChar();
         initList();
-        initBtn();
+    initBtn();
         netWorkBusiness = new NetWorkBusiness(DataCache.getToken(), Constans.getApiUrl());
         up_down.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
@@ -97,22 +99,7 @@ public class MainActivity extends BaseActivity {
     Handler handler = new Handler() {
         @Override
         public void handleMessage(Message msg) {
-            LineDataSet lineDataSet;
-            //画图
-            if (lineChart.getData() != null && lineChart.getData().getDataSetCount() > 0) {
-                lineDataSet = (LineDataSet) lineChart.getData().getDataSetByIndex(0);
-                lineDataSet.addEntry((Entry) msg.obj);
-                lineChart.getData().notifyDataChanged();
-                lineChart.notifyDataSetChanged();
-                System.out.println(lineDataSet.getYMax());
-            } else {
-                List<Entry> values=new ArrayList<>();
-                values.add((Entry) msg.obj);
-                lineDataSet = new LineDataSet(values, "");
-                LineData data = new LineData(lineDataSet);
-                lineChart.setData(data);
-            }
-            lineChart.invalidate();
+
         }
     };
 
@@ -124,21 +111,67 @@ public class MainActivity extends BaseActivity {
                 isRecode = true;
 
                 new Thread() {
-                    int x = 0;
-
                     @Override
                     public void run() {
 
                         while (isRecode) {
                             try {
-                                Thread.sleep(1000);
+                                Thread.sleep(2000);
                             } catch (InterruptedException e) {
                                 e.printStackTrace();
                             }
-                            x++;
-                            Message msg = Message.obtain();
-                            msg.obj = new Entry(x, x * x);
-                            handler.sendMessage(msg);
+                            netWorkBusiness.getSensorData(Device.getDEVICE(), Device.getGuanzhao(), null, null, null, null, null, "1", null, new Callback<BaseResponseEntity>() {
+                                @Override
+                                public void onResponse(Call<BaseResponseEntity> call, Response<BaseResponseEntity> response) {
+                                    BaseResponseEntity<List<ListItemOfDevice>> baseResponseEntity = response.body();
+
+                                    if (baseResponseEntity != null) {
+                                       Map<String,Object> d= (Map) baseResponseEntity.getResultObj();
+                                       List datas= (List) d.get("DataPoints");
+                                       Map<String,Object> data= (Map<String, Object>) datas.get(0);
+                                       List<Map> list= (List<Map>) data.get("PointDTO");
+                                       double value= (double) list.get(0).get("Value");
+                                       String time= (String) list.get(0).get("RecordTime");
+                                       time=time.substring(11);
+                                       System.out.println(value);
+                                       System.out.println(time);
+                                       dynamicLineChartManager.addEntry((int) value,time );
+                                    } else {
+                                        Toast.makeText(getApplicationContext(),"请求出错 : 请求参数不合法或者服务出错" , Toast.LENGTH_SHORT);
+                                    }
+                                }
+
+                                @Override
+                                public void onFailure(Call<BaseResponseEntity> call, Throwable t) {
+
+                                }
+                            });
+                          /*  netWorkBusiness.getDevicesDatas(Device.getDEVICE(), new Callback<BaseResponseEntity<List<ListItemOfDevice>>>() {
+                                @Override
+                                public void onResponse(@NonNull Call<BaseResponseEntity<List<ListItemOfDevice>>> call, @NonNull Response<BaseResponseEntity<List<ListItemOfDevice>>> response) {
+                                    BaseResponseEntity<List<ListItemOfDevice>> baseResponseEntity = response.body();
+
+                                    if (baseResponseEntity != null) {
+                                       List<ListItemOfDevice> res= (List) baseResponseEntity.getResultObj();
+                                      List<ListItemOfNewestData> datas=res.get(0).getDatas();
+                                        for (ListItemOfNewestData data : datas) {
+                                            if (data.getApiTag()==Device.getWendu()){ //温度数值
+                                                System.out.println(data.getValue());
+                                            }
+                                            dynamicLineChartManager.addEntry(Integer.parseInt(data.getValue()),"时间" );
+                                        }
+                                    } else {
+                                        Toast.makeText(getApplicationContext(), "请求出错 : 请求参数不合法或者服务出错", Toast.LENGTH_SHORT).show();
+                                    }
+
+                                }
+
+                                @Override
+                                public void onFailure(Call<BaseResponseEntity<List<ListItemOfDevice>>> call, Throwable t) {
+
+                                }
+                            });
+//                            dynamicLineChartManager.addEntry(, "时间");*/
                         }
                     }
                 }.start();
@@ -210,15 +243,8 @@ public class MainActivity extends BaseActivity {
     }
 
     private void initChar() {
-        Description description = new Description();
-        description.setText("温度记录");
-        description.setTextColor(Color.BLUE);
-        description.setTextSize(10);
-        lineChart.setDescription(description);//设置图表描述信息
-        lineChart.setNoDataText("暂无数据");
-        lineChart.setScaleEnabled(false);
-        lineChart.setVisibleXRangeMaximum(10);
-        //绘制动画
-        lineChart.animateX(2500);
+        dynamicLineChartManager=new DynamicLineChartManager(lineChart,"记录" , Color.BLUE);
+        dynamicLineChartManager.setDescription("温度记录");
     }
+
 }
