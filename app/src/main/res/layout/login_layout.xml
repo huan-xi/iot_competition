@@ -5,25 +5,59 @@
         android:layout_height="match_parent"
         android:layout_width="match_parent" xmlns:app="http://schemas.android.com/apk/res-auto"
         tools:context="cn.huse.prepare.MainActivity"
-        android:orientation="vertical"
+        android:background="@drawable/login_bg"
 >
-    <LinearLayout android:layout_width="match_parent" android:layout_height="match_parent"
-                  android:orientation="vertical">
 
-
-        <com.qmuiteam.qmui.widget.QMUITopBar
-                android:id="@+id/topbar"
+    <RelativeLayout android:layout_width="match_parent" android:layout_height="match_parent">
+        <LinearLayout
                 android:layout_width="match_parent"
-                app:qmui_topbar_bg_color="@color/colorPrimary"
-                android:layout_height="?attr/qmui_topbar_height"/>
-        <EditText android:id="@+id/username" android:layout_width="match_parent" android:layout_height="wrap_content"
-                  android:hint="账号" android:text="18593470660"/>
-        <EditText android:id="@+id/passwd" android:inputType="textPassword" android:layout_width="match_parent"
-                  android:layout_height="wrap_content"
-                  android:hint="密码" android:text="j9841520p"/>
-        <Button android:id="@+id/btn_login" android:layout_width="wrap_content" android:layout_height="wrap_content"
-                android:text="提交"/>
-    </LinearLayout>
+                android:layout_height="wrap_content"
+                android:layout_marginTop="50dp"
+                android:orientation="vertical">
 
+            <ImageView
+                    android:layout_width="80dip"
+                    android:layout_height="80dip"
+                    android:layout_gravity="center_horizontal"
+                    android:src="@drawable/logo"/>
+
+
+            <TextView
+                    android:layout_width="fill_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="5dip"
+                    android:gravity="center"
+                    android:text="LIU"
+                    android:textColor="#ffffff"
+                    android:textSize="24sp"/>
+        </LinearLayout>
+        <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_centerVertical="true"
+                android:layout_alignParentLeft="true"
+                android:layout_alignParentStart="true">
+            <include
+                    android:id="@+id/input_layout"
+                    android:layout_width="match_parent"
+                    android:layout_height="130dip"
+                    layout="@layout/input_layout"/>
+            <com.qmuiteam.qmui.widget.roundwidget.QMUIRoundButton android:id="@+id/btn_login"
+                                                                  android:layout_below="@+id/input_layout"
+                                                                  android:gravity="center"
+                                                                  android:layout_centerInParent="true"
+                                                                  android:layout_width="200dp"
+                                                                  android:layout_height="50dp"
+                                                                  android:text="登入"
+                                                                  android:layout_marginTop="40dp"
+                                                                  android:paddingBottom="2dip"
+                                                                  android:paddingLeft="15dip"
+                                                                  android:paddingRight="15dip"
+                                                                  android:paddingTop="2dip"
+                                                                  android:textColor="#ffffff"
+                                                                  android:textSize="20sp"
+            />
+        </RelativeLayout>
+    </RelativeLayout>
 
 </com.qmuiteam.qmui.widget.QMUIWindowInsetLayout>

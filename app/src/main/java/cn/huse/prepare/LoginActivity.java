@@ -19,16 +19,15 @@ import cn.huse.prepare.util.DataCache;
 import com.qmuiteam.qmui.widget.QMUITopBar;
 import com.qmuiteam.qmui.widget.dialog.QMUIDialog;
 import com.qmuiteam.qmui.widget.dialog.QMUITipDialog;
+import com.qmuiteam.qmui.widget.roundwidget.QMUIRoundButton;
 import org.xutils.view.annotation.ViewInject;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
 public class LoginActivity extends BaseActivity {
-    @ViewInject(R.id.topbar)
-    private QMUITopBar mTopBar;
     @ViewInject(R.id.btn_login)
-    private Button bt_login;
+    private QMUIRoundButton bt_login;
     @ViewInject(R.id.username)
     private EditText et_username;
     @ViewInject(R.id.passwd)
@@ -37,8 +36,6 @@ public class LoginActivity extends BaseActivity {
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         setContentView(R.layout.login_layout);
         super.onCreate(savedInstanceState);
-        mTopBar=findViewById(R.id.topbar);
-        mTopBar.setTitle("云平台登入");
         init();
     }
     private void login(String username,String passwd){
