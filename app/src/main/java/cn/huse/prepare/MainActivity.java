@@ -34,12 +34,17 @@ import com.qmuiteam.qmui.widget.dialog.QMUITipDialog;
 import com.qmuiteam.qmui.widget.grouplist.QMUICommonListItemView;
 import com.qmuiteam.qmui.widget.grouplist.QMUIGroupListView;
 import com.qmuiteam.qmui.widget.roundwidget.QMUIRoundButton;
+import org.xutils.DbManager;
+import org.xutils.db.Selector;
+import org.xutils.ex.DbException;
 import org.xutils.view.annotation.ViewInject;
+import org.xutils.x;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
 import javax.xml.datatype.Duration;
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -56,9 +61,30 @@ public class MainActivity extends BaseActivity {
     QMUIRoundButton btn_start;
     @ViewInject(R.id.end)
     QMUIRoundButton btn_end;
+    @ViewInject(R.id.save)
+    QMUIRoundButton btn_save;
+    @ViewInject(R.id.read)
+    QMUIRoundButton btn_read;
+
     Context context;
     private boolean isRecode = false;
     DynamicLineChartManager dynamicLineChartManager;
+
+    DbManager.DaoConfig daoConfig = new DbManager.DaoConfig()
+            .setDbName("data.db")
+            .setDbVersion(2)
+            .setDbOpenListener(new DbManager.DbOpenListener() {
+                @Override
+                public void onDbOpened(DbManager db) {
+                    // 开启WAL, 对写入加速提升巨大
+                    db.getDatabase().enableWriteAheadLogging();
+                }
+            })
+            .setDbUpgradeListener(new DbManager.DbUpgradeListener() {
+                @Override
+                public void onUpgrade(DbManager db, int oldVersion, int newVersion) {
+                }
+            });
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         setContentView(R.layout.activity_main);
@@ -66,7 +92,7 @@ public class MainActivity extends BaseActivity {
         context = this;
         initChar();
         initList();
-    initBtn();
+        initBtn();
         netWorkBusiness = new NetWorkBusiness(DataCache.getToken(), Constans.getApiUrl());
         up_down.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
@@ -96,20 +122,26 @@ public class MainActivity extends BaseActivity {
         });
     }
 
-    Handler handler = new Handler() {
-        @Override
-        public void handleMessage(Message msg) {
-
-        }
-    };
 
     private void initBtn() {
+        btn_read.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                final DbManager dbManager = x.getDb(daoConfig);
+                try {
+                   List<POJO> pojos=dbManager.selector(POJO.class).findAll();
+
+                    System.out.println("test");
+                } catch (DbException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
         btn_start.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 //开始记录
                 isRecode = true;
-
                 new Thread() {
                     @Override
                     public void run() {
@@ -126,18 +158,17 @@ public class MainActivity extends BaseActivity {
                                     BaseResponseEntity<List<ListItemOfDevice>> baseResponseEntity = response.body();
 
                                     if (baseResponseEntity != null) {
-                                       Map<String,Object> d= (Map) baseResponseEntity.getResultObj();
-                                       List datas= (List) d.get("DataPoints");
-                                       Map<String,Object> data= (Map<String, Object>) datas.get(0);
-                                       List<Map> list= (List<Map>) data.get("PointDTO");
-                                       double value= (double) list.get(0).get("Value");
-                                       String time= (String) list.get(0).get("RecordTime");
-                                       time=time.substring(11);
-                                       System.out.println(value);
-                                       System.out.println(time);
-                                       dynamicLineChartManager.addEntry((int) value,time );
+                                        Map<String, Object> d = (Map) baseResponseEntity.getResultObj();
+                                        List datas = (List) d.get("DataPoints");
+                                        Map<String, Object> data = (Map<String, Object>) datas.get(0);
+                                        List<Map> list = (List<Map>) data.get("PointDTO");
+                                        double value = (double) list.get(0).get("Value");
+                                        String time = (String) list.get(0).get("RecordTime");
+                                        Utils.saveEntity(daoConfig,value ,time );
+                                        time = time.substring(11);
+                                        dynamicLineChartManager.addEntry((int) value, time);
                                     } else {
-                                        Toast.makeText(getApplicationContext(),"请求出错 : 请求参数不合法或者服务出错" , Toast.LENGTH_SHORT);
+                                        Toast.makeText(getApplicationContext(), "请求出错 : 请求参数不合法或者服务出错", Toast.LENGTH_SHORT);
                                     }
                                 }
 
@@ -146,32 +177,6 @@ public class MainActivity extends BaseActivity {
 
                                 }
                             });
-                          /*  netWorkBusiness.getDevicesDatas(Device.getDEVICE(), new Callback<BaseResponseEntity<List<ListItemOfDevice>>>() {
-                                @Override
-                                public void onResponse(@NonNull Call<BaseResponseEntity<List<ListItemOfDevice>>> call, @NonNull Response<BaseResponseEntity<List<ListItemOfDevice>>> response) {
-                                    BaseResponseEntity<List<ListItemOfDevice>> baseResponseEntity = response.body();
-
-                                    if (baseResponseEntity != null) {
-                                       List<ListItemOfDevice> res= (List) baseResponseEntity.getResultObj();
-                                      List<ListItemOfNewestData> datas=res.get(0).getDatas();
-                                        for (ListItemOfNewestData data : datas) {
-                                            if (data.getApiTag()==Device.getWendu()){ //温度数值
-                                                System.out.println(data.getValue());
-                                            }
-                                            dynamicLineChartManager.addEntry(Integer.parseInt(data.getValue()),"时间" );
-                                        }
-                                    } else {
-                                        Toast.makeText(getApplicationContext(), "请求出错 : 请求参数不合法或者服务出错", Toast.LENGTH_SHORT).show();
-                                    }
-
-                                }
-
-                                @Override
-                                public void onFailure(Call<BaseResponseEntity<List<ListItemOfDevice>>> call, Throwable t) {
-
-                                }
-                            });
-//                            dynamicLineChartManager.addEntry(, "时间");*/
                         }
                     }
                 }.start();
@@ -184,6 +189,7 @@ public class MainActivity extends BaseActivity {
                 isRecode = false;
             }
         });
+
     }
 
     private void initList() {
@@ -204,6 +210,7 @@ public class MainActivity extends BaseActivity {
                             Toast.makeText(getApplicationContext(), "请求出错 : 请求参数不合法或者服务出错", Toast.LENGTH_SHORT).show();
                         }
                     }
+
                     @Override
                     public void onFailure(Call<BaseResponseEntity> call, Throwable t) {
 
@@ -243,7 +250,7 @@ public class MainActivity extends BaseActivity {
     }
 
     private void initChar() {
-        dynamicLineChartManager=new DynamicLineChartManager(lineChart,"记录" , Color.BLUE);
+        dynamicLineChartManager = new DynamicLineChartManager(lineChart, "记录", Color.BLUE);
         dynamicLineChartManager.setDescription("温度记录");
     }
 

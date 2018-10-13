@@ -8,7 +8,31 @@ public class POJO {
     @Column(name = "id",isId = true)
     private int id;
     @Column(name = "value")
-    private String value;
+    private double value;
     @Column(name = "time")
     private String time;
+
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+    }
+
+    public double getValue() {
+        return value;
+    }
+
+    public void setValue(double value) {
+        this.value = value;
+    }
+
+    public String getTime() {
+        return time;
+    }
+
+    public void setTime(String time) {
+        this.time = time;
+    }
 }
