@@ -17,6 +17,7 @@ import android.widget.Toast;
 import cn.com.newland.nle_sdk.responseEntity.ListItemOfDevice;
 import cn.com.newland.nle_sdk.responseEntity.ListItemOfNewestData;
 import cn.com.newland.nle_sdk.responseEntity.ProjectInfo;
+import cn.com.newland.nle_sdk.responseEntity.User;
 import cn.com.newland.nle_sdk.responseEntity.base.BasePager;
 import cn.com.newland.nle_sdk.responseEntity.base.BaseResponseEntity;
 import cn.com.newland.nle_sdk.util.NetWorkBusiness;
@@ -24,6 +25,9 @@ import cn.com.newland.nle_sdk.util.Tools;
 import cn.huse.myapplication.R;
 import cn.huse.prepare.base.BaseActivity;
 import cn.huse.prepare.util.*;
+import com.bin.david.form.core.SmartTable;
+import com.bin.david.form.data.column.Column;
+import com.bin.david.form.data.table.TableData;
 import com.github.mikephil.charting.animation.Easing;
 import com.github.mikephil.charting.charts.LineChart;
 import com.github.mikephil.charting.components.Description;
@@ -36,6 +40,7 @@ import com.qmuiteam.qmui.widget.grouplist.QMUIGroupListView;
 import com.qmuiteam.qmui.widget.roundwidget.QMUIRoundButton;
 import org.xutils.DbManager;
 import org.xutils.db.Selector;
+import org.xutils.db.annotation.Table;
 import org.xutils.ex.DbException;
 import org.xutils.view.annotation.ViewInject;
 import org.xutils.x;
@@ -61,11 +66,10 @@ public class MainActivity extends BaseActivity {
     QMUIRoundButton btn_start;
     @ViewInject(R.id.end)
     QMUIRoundButton btn_end;
-    @ViewInject(R.id.save)
-    QMUIRoundButton btn_save;
     @ViewInject(R.id.read)
     QMUIRoundButton btn_read;
-
+    @ViewInject(R.id.table)
+    SmartTable table;
     Context context;
     private boolean isRecode = false;
     DynamicLineChartManager dynamicLineChartManager;
@@ -85,6 +89,7 @@ public class MainActivity extends BaseActivity {
                 public void onUpgrade(DbManager db, int oldVersion, int newVersion) {
                 }
             });
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         setContentView(R.layout.activity_main);
@@ -93,6 +98,7 @@ public class MainActivity extends BaseActivity {
         initChar();
         initList();
         initBtn();
+        initTable();
         netWorkBusiness = new NetWorkBusiness(DataCache.getToken(), Constans.getApiUrl());
         up_down.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
@@ -122,6 +128,10 @@ public class MainActivity extends BaseActivity {
         });
     }
 
+    private void initTable() {
+
+    }
+
 
     private void initBtn() {
         btn_read.setOnClickListener(new View.OnClickListener() {
@@ -129,9 +139,11 @@ public class MainActivity extends BaseActivity {
             public void onClick(View v) {
                 final DbManager dbManager = x.getDb(daoConfig);
                 try {
-                   List<POJO> pojos=dbManager.selector(POJO.class).findAll();
-
-                    System.out.println("test");
+                    List<POJO> pojos = dbManager.selector(POJO.class).findAll();
+                    Column<String> column1 = new Column<>("时间", "time");
+                    Column<Integer> column2 = new Column<>("数值", "value");
+                    final TableData tableData = new TableData("表格名",pojos,column1,column2);
+                    table.setTableData(tableData);
                 } catch (DbException e) {
                     e.printStackTrace();
                 }
@@ -164,7 +176,7 @@ public class MainActivity extends BaseActivity {
                                         List<Map> list = (List<Map>) data.get("PointDTO");
                                         double value = (double) list.get(0).get("Value");
                                         String time = (String) list.get(0).get("RecordTime");
-                                        Utils.saveEntity(daoConfig,value ,time );
+                                        Utils.saveEntity(daoConfig, value, time);
                                         time = time.substring(11);
                                         dynamicLineChartManager.addEntry((int) value, time);
                                     } else {

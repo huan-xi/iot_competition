@@ -42,7 +42,7 @@
                 app:qmui_isRadiusAdjustBounds="true"/>
     </LinearLayout>
     <com.github.mikephil.charting.charts.LineChart android:layout_marginTop="10dp" android:id="@+id/line_chart"
-                                                   android:layout_width="match_parent" android:layout_height="240dp"/>
+                                                   android:layout_width="match_parent" android:layout_height="200dp"/>
     <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content" android:orientation="horizontal">
 
         <com.qmuiteam.qmui.widget.roundwidget.QMUIRoundButton
@@ -57,4 +57,9 @@
                 android:text="读取记录"
                 app:qmui_isRadiusAdjustBounds="true"/>
     </LinearLayout>
+    <com.bin.david.form.core.SmartTable
+            android:id="@+id/table"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+    />
 </LinearLayout>
