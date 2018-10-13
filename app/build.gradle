@@ -29,4 +29,5 @@ dependencies {
     compile 'com.qmuiteam:qmui:1.1.3'
     compile 'org.xutils:xutils:3.5.0' //xutils
     compile 'com.github.huangyanbin:SmartTable:2.2.0'
+    compile 'me.wangyuwei:ParticleView:1.0.4'
 }

@@ -2,18 +2,23 @@ package cn.huse.prepare;
 
 import android.content.Context;
 import android.graphics.Color;
+import android.os.Build;
 import android.os.Handler;
 import android.os.Message;
 import android.service.autofill.Dataset;
 import android.support.annotation.NonNull;
+import android.support.annotation.RequiresApi;
+import android.support.v4.content.ContextCompat;
+import android.support.v4.view.PagerAdapter;
+import android.support.v4.view.ViewPager;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.util.TypedValue;
+import android.view.Gravity;
 import android.view.View;
-import android.widget.Button;
-import android.widget.CompoundButton;
-import android.widget.SeekBar;
-import android.widget.Toast;
+import android.view.ViewGroup;
+import android.widget.*;
 import cn.com.newland.nle_sdk.responseEntity.ListItemOfDevice;
 import cn.com.newland.nle_sdk.responseEntity.ListItemOfNewestData;
 import cn.com.newland.nle_sdk.responseEntity.ProjectInfo;
@@ -21,19 +26,16 @@ import cn.com.newland.nle_sdk.responseEntity.User;
 import cn.com.newland.nle_sdk.responseEntity.base.BasePager;
 import cn.com.newland.nle_sdk.responseEntity.base.BaseResponseEntity;
 import cn.com.newland.nle_sdk.util.NetWorkBusiness;
-import cn.com.newland.nle_sdk.util.Tools;
 import cn.huse.myapplication.R;
+import cn.huse.prepare.adapter.ContentPage;
 import cn.huse.prepare.base.BaseActivity;
 import cn.huse.prepare.util.*;
 import com.bin.david.form.core.SmartTable;
 import com.bin.david.form.data.column.Column;
 import com.bin.david.form.data.table.TableData;
-import com.github.mikephil.charting.animation.Easing;
 import com.github.mikephil.charting.charts.LineChart;
-import com.github.mikephil.charting.components.Description;
-import com.github.mikephil.charting.data.Entry;
-import com.github.mikephil.charting.data.LineData;
-import com.github.mikephil.charting.data.LineDataSet;
+import com.qmuiteam.qmui.widget.QMUITabSegment;
+import com.qmuiteam.qmui.widget.QMUITopBar;
 import com.qmuiteam.qmui.widget.dialog.QMUITipDialog;
 import com.qmuiteam.qmui.widget.grouplist.QMUICommonListItemView;
 import com.qmuiteam.qmui.widget.grouplist.QMUIGroupListView;
@@ -51,6 +53,7 @@ import retrofit2.Response;
 import javax.xml.datatype.Duration;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -70,7 +73,13 @@ public class MainActivity extends BaseActivity {
     QMUIRoundButton btn_read;
     @ViewInject(R.id.table)
     SmartTable table;
+    @ViewInject(R.id.topBar)
+    QMUITopBar topBar;
     Context context;
+    @ViewInject(R.id.tabSegment)
+    QMUITabSegment mTabSegment;
+    @ViewInject(R.id.contentViewPager)
+    ViewPager mContentViewPager;
     private boolean isRecode = false;
     DynamicLineChartManager dynamicLineChartManager;
 
@@ -89,7 +98,59 @@ public class MainActivity extends BaseActivity {
                 public void onUpgrade(DbManager db, int oldVersion, int newVersion) {
                 }
             });
+    private Map<ContentPage, View> mPageMap = new HashMap<>();
+    private ContentPage mDestPage = ContentPage.Item1;
 
+    private PagerAdapter mPagerAdapter = new PagerAdapter() {
+        @Override
+        public boolean isViewFromObject(View view, Object object) {
+            return view == object;
+        }
+
+        @Override
+        public int getCount() {
+            return ContentPage.SIZE;
+        }
+
+        @Override
+        public Object instantiateItem(final ViewGroup container, int position) {
+            ContentPage page = ContentPage.getPage(position);
+            View view = getPageView(page);
+            ViewGroup.LayoutParams params = new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
+            container.addView(view, params);
+            return view;
+        }
+
+        @Override
+        public void destroyItem(ViewGroup container, int position, Object object) {
+            container.removeView((View) object);
+        }
+
+    };
+
+
+
+    private View getPageView(ContentPage page) {
+        View view = mPageMap.get(page);
+        if (view == null) {
+            TextView textView = new TextView(this);
+            textView.setGravity(Gravity.CENTER);
+            textView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 20);
+            textView.setTextColor(ContextCompat.getColor(this, R.color.bar_divider));
+
+            if (page == ContentPage.Item1) {
+                textView.setText("test1");
+            } else if (page == ContentPage.Item2) {
+                textView.setText("test2");
+            }
+
+            view = textView;
+            mPageMap.put(page, view);
+        }
+        return view;
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.M)
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         setContentView(R.layout.activity_main);
@@ -99,7 +160,24 @@ public class MainActivity extends BaseActivity {
         initList();
         initBtn();
         initTable();
+        initBar();
+        topBar.setTitle("首页");
         netWorkBusiness = new NetWorkBusiness(DataCache.getToken(), Constans.getApiUrl());
+        initSeekBar();
+    }
+
+    private void initBar() {
+        mContentViewPager.setAdapter(mPagerAdapter);
+        mContentViewPager.setCurrentItem(mDestPage.getPosition(), false);
+        mTabSegment.addTab(new QMUITabSegment.Tab("折线图"));
+        mTabSegment.addTab(new QMUITabSegment.Tab("记录表"));
+        mTabSegment.setupWithViewPager(mContentViewPager, false);
+        mTabSegment.setMode(QMUITabSegment.MODE_FIXED);
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.M)
+    private void initSeekBar() {
+
         up_down.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
@@ -142,7 +220,7 @@ public class MainActivity extends BaseActivity {
                     List<POJO> pojos = dbManager.selector(POJO.class).findAll();
                     Column<String> column1 = new Column<>("时间", "time");
                     Column<Integer> column2 = new Column<>("数值", "value");
-                    final TableData tableData = new TableData("表格名",pojos,column1,column2);
+                    final TableData tableData = new TableData("表格名", pojos, column1, column2);
                     table.setTableData(tableData);
                 } catch (DbException e) {
                     e.printStackTrace();
